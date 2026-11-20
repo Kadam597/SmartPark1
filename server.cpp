@@ -399,12 +399,23 @@ int main() {
 
     // --------------------------------------------------------
     // Static file serving: serve the web/ directory on "/"
+    // Automatically detects "web", "Web", or current directory
     // --------------------------------------------------------
+    std::string webDir = "web";
     std::error_code ec;
-    if (std::filesystem::exists(WEB_ROOT, ec) && std::filesystem::is_directory(WEB_ROOT, ec)) {
-        server.set_mount_point("/", WEB_ROOT.c_str());
+    if (!std::filesystem::exists(webDir, ec) || !std::filesystem::is_directory(webDir, ec)) {
+        if (std::filesystem::exists("Web", ec) && std::filesystem::is_directory("Web", ec)) {
+            webDir = "Web";
+        } else if (std::filesystem::exists("index.html", ec)) {
+            webDir = ".";
+        }
+    }
+
+    if (std::filesystem::exists(webDir, ec) && std::filesystem::is_directory(webDir, ec)) {
+        server.set_mount_point("/", webDir.c_str());
+        std::cout << "[SmartPark] Serving static frontend from: " << webDir << std::endl;
     } else {
-        std::cout << "[SmartPark] WARNING: '" << WEB_ROOT << "' directory not found for static serving." << std::endl;
+        std::cout << "[SmartPark] WARNING: '" << webDir << "' directory not found for static serving." << std::endl;
         std::cout << "[SmartPark] You can still open web/index.html directly in your browser." << std::endl;
     }
 
