@@ -16,6 +16,11 @@ WORKDIR /app
 
 COPY . .
 
+# Ensure /app/web exists and contains web assets (handles root files or capitalized Web folder)
+RUN mkdir -p web && \
+    if [ -d "Web" ] && [ "Web" != "web" ]; then cp -rn Web/* web/ 2>/dev/null || true; fi && \
+    if [ -f "index.html" ]; then cp index.html style.css app.js web/ 2>/dev/null || true; fi
+
 # Compile for Linux with C++17 and pthread
 RUN g++ -std=c++17 -O2 -Wall -Wextra -I. \
     server.cpp vehicle.cpp vehicle_types.cpp parking_slot.cpp parking_lot.cpp \
