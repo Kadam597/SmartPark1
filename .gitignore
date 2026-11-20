@@ -1,0 +1,20 @@
+# Compiled binaries
+*.exe
+SmartParkServer
+SmartPark
+
+# State and persistence
+smartpark_state.dat
+
+# Logs and test artifacts
+*.log
+*.tmp
+*.json
+*.txt
+!DEMO_SCRIPT.md
+!TEST_REPORT.md
+
+# IDE configurations
+.trae/
+.vscode/
+.idea/

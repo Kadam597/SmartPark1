@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartPark – Smart Parking Management System</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ============ TOP NAV ============ -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo">P</div>
+      <div>
+        <h1 class="brand-title">SmartPark</h1>
+        <p class="brand-sub" id="lotName">SmartPark Main Campus Lot</p>
+      </div>
+    </div>
+    <div class="server-status">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Connecting…</span>
+    </div>
+  </header>
+
+  <!-- ============ TABS ============ -->
+  <nav class="tabs">
+    <button class="tab active" data-tab="dashboard">Dashboard</button>
+    <button class="tab" data-tab="register">Register</button>
+    <button class="tab" data-tab="layout">Parking Layout</button>
+    <button class="tab" data-tab="exit">Exit Vehicle</button>
+    <button class="tab" data-tab="history">History</button>
+  </nav>
+
+  <main class="container">
+
+    <!-- Loading overlay -->
+    <div class="loader" id="globalLoader" hidden>
+      <div class="spinner"></div>
+      <p>Loading…</p>
+    </div>
+
+    <!-- Toast notifications -->
+    <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+    <!-- =============================================================
+         SECTION: DASHBOARD
+         ============================================================= -->
+    <section class="tab-panel active" id="tab-dashboard">
+
+      <div class="grid-cards">
+        <div class="stat-card stat-navy">
+          <div class="stat-label">Total Slots</div>
+          <div class="stat-value" id="statTotalSlots">0</div>
+          <div class="stat-icon">🅿️</div>
+        </div>
+        <div class="stat-card stat-orange">
+          <div class="stat-label">Occupied</div>
+          <div class="stat-value" id="statOccupied">0</div>
+          <div class="stat-sub" id="statOccupiedPct">0% utilization</div>
+          <div class="stat-icon">🚗</div>
+        </div>
+        <div class="stat-card stat-green">
+          <div class="stat-label">Available</div>
+          <div class="stat-value" id="statAvailable">0</div>
+          <div class="stat-icon">✅</div>
+        </div>
+        <div class="stat-card stat-gold">
+          <div class="stat-label">Total Revenue</div>
+          <div class="stat-value">Rs. <span id="statRevenue">0.00</span></div>
+          <div class="stat-sub"><span id="statServed">0</span> vehicles served</div>
+          <div class="stat-icon">💰</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">
+            <h2>Vehicles Parked by Type</h2>
+          </div>
+          <div class="type-bar-chart">
+            <div class="bar-row">
+              <span class="bar-label">🚗 Cars</span>
+              <div class="bar-bg"><div class="bar-fill bar-car" id="barCar" style="width:0%"></div></div>
+              <span class="bar-value" id="countCar">0</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">🏍️ Bikes</span>
+              <div class="bar-bg"><div class="bar-fill bar-bike" id="barBike" style="width:0%"></div></div>
+              <span class="bar-value" id="countBike">0</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">🚚 Trucks</span>
+              <div class="bar-bg"><div class="bar-fill bar-truck" id="barTruck" style="width:0%"></div></div>
+              <span class="bar-value" id="countTruck">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Recent Activity</h2>
+            <button class="btn-mini" onclick="refreshDashboard()">Refresh</button>
+          </div>
+          <div class="activity-list" id="activityList">
+            <p class="muted">No recent activity.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =============================================================
+         SECTION: REGISTER VEHICLE
+         ============================================================= -->
+    <section class="tab-panel" id="tab-register">
+      <div class="card card-form">
+        <div class="card-header">
+          <h2>Register Vehicle Entry</h2>
+          <p class="muted">All calculations are handled by the C++ backend (polymorphic Vehicle::calculateFee).</p>
+        </div>
+
+        <form id="registerForm" class="form" autocomplete="off" onsubmit="return false;">
+          <div class="form-row">
+            <label for="regType">Vehicle Type</label>
+            <select id="regType" required>
+              <option value="">– Select type –</option>
+              <option value="Car">Car (Rs. 40.00/hr)</option>
+              <option value="Bike">Bike (Rs. 20.00/hr)</option>
+              <option value="Truck">Truck (Rs. 80.00/hr)</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label for="regNumber">Registration Number</label>
+            <input type="text" id="regNumber" placeholder="e.g. MH-12-AB-1234"
+                   required maxlength="30" style="text-transform:uppercase;" />
+            <p class="hint" id="regHint">Slot is automatically allocated by the backend.</p>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" id="registerBtn">
+              Register &amp; Park Vehicle
+            </button>
+          </div>
+
+          <div id="registerResult" class="result-box" hidden></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- =============================================================
+         SECTION: PARKING LAYOUT
+         ============================================================= -->
+    <section class="tab-panel" id="tab-layout">
+      <div class="card">
+        <div class="card-header">
+          <h2>Live Parking Layout</h2>
+          <div>
+            <button class="btn-mini" onclick="refreshSlots()">🔄 Refresh</button>
+          </div>
+        </div>
+        <div class="legend">
+          <span class="legend-chip chip-available">Available</span>
+          <span class="legend-chip chip-occupied">Occupied</span>
+          <span class="legend-chip chip-bike">Bike Slot</span>
+          <span class="legend-chip chip-car">Car Slot</span>
+          <span class="legend-chip chip-truck">Truck Slot</span>
+          <span class="legend-chip chip-universal">Universal</span>
+        </div>
+        <div class="slot-grid" id="slotGrid">
+          <p class="muted">Loading slots…</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =============================================================
+         SECTION: EXIT VEHICLE
+         ============================================================= -->
+    <section class="tab-panel" id="tab-exit">
+      <div class="card card-form">
+        <div class="card-header">
+          <h2>Vehicle Exit &amp; Payment</h2>
+          <p class="muted">The C++ backend calculates the fee polymorphically using the correct derived-class rate.</p>
+        </div>
+
+        <form id="exitSearchForm" class="form" onsubmit="return false;">
+          <div class="form-row">
+            <label for="exitSearchReg">Registration Number</label>
+            <div class="inline-row">
+              <input type="text" id="exitSearchReg" placeholder="Enter plate & click Lookup"
+                     style="text-transform:uppercase;" />
+              <button class="btn-outline" type="submit" id="exitSearchBtn">Lookup</button>
+            </div>
+          </div>
+        </form>
+
+        <div id="exitSummary" class="result-box summary-box" hidden></div>
+
+        <form id="exitConfirmForm" onsubmit="return false;" hidden>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary btn-danger" id="confirmExitBtn">
+              Confirm Exit &amp; Charge Fee
+            </button>
+          </div>
+        </form>
+
+        <div id="exitReceipt" class="result-box receipt" hidden></div>
+      </div>
+    </section>
+
+    <!-- =============================================================
+         SECTION: PARKING HISTORY
+         ============================================================= -->
+    <section class="tab-panel" id="tab-history">
+      <div class="card">
+        <div class="card-header">
+          <h2>Parking History</h2>
+          <div class="history-filters">
+            <select id="historyFilter">
+              <option value="all">All Types</option>
+              <option value="active">Active (Parked)</option>
+              <option value="completed">Completed (Exited)</option>
+              <option value="Car">Cars</option>
+              <option value="Bike">Bikes</option>
+              <option value="Truck">Trucks</option>
+            </select>
+            <input type="search" id="historySearch" placeholder="Search plate…" />
+            <button class="btn-mini" onclick="refreshHistory()">Refresh</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Registration</th>
+                <th>Slot</th>
+                <th>Entry</th>
+                <th>Exit</th>
+                <th>Dur (hrs)</th>
+                <th>Fee (Rs.)</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <tr><td colspan="8" class="muted center">Loading history…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>SmartPark · OOP Project · C++ Backend (<code>cpp-httplib</code>) + Vanilla JS Frontend</p>
+    <p class="muted">Fee calculation uses RUNTIME POLYMORPHISM: Vehicle* → Car/Bike/Truck::calculateFee()</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

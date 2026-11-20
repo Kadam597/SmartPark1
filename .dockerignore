@@ -1,0 +1,10 @@
+.git
+.trae
+*.exe
+*.log
+*.tmp
+smartpark_state.dat
+*.json
+*.txt
+build_server.log
+build_console.log
